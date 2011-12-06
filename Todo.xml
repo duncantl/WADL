@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="/Users/nolan/EMD/StatComputing/trunk/XDynDocs/inst/XSL/OmegahatXSL/Todo.xsl" ?>
+
+<topics xmlns:r="http://www.r-project.org">
+<title>RKML</title>
+
+<topic>
+
+<items>
+<item>
+generate NAMESPACE
+</item>
+
+<item>
+Make documentation
+</item>
+
+<item>
+Process types
+</item>
+
+<item>
+If we know result is JSON, then provide a default converter.
+</item>
+
+</items>
+</topic>
+</topics>

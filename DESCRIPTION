@@ -1,0 +1,19 @@
+Package: WADL
+Version: 0.2-0
+Imports: XML
+Depends: RCurl, methods
+Suggests: RJSONIO
+Note: RCurl is needed at run time.
+Title: Programmatically process Web Application Description Language documents
+Description: This package provides a tools to process WADL
+ files that are used to describe REST APIs and Web Services.
+ The package can extract information about the methods  and resources
+ described in a WADL and generate R code to provide an interface
+ to each of those methods.
+License: GPL2
+Author: Duncan Temple Lang
+Maintainer: Duncan Temple Lang <duncan@r-project.org>
+
+
+
+

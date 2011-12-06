@@ -1,0 +1,11 @@
+import(XML)
+
+export(makeFunctions, wadl, wadlMethods, makeFunction, makeWADLDocs, makeWADLDoc)
+
+export(checkValues, convertJSON) # run time.
+
+exportMethods("coerce", "names")
+S3method(writeDoc, WADLDocumentation)
+S3method(writeDoc, WADLDocumentationCollection)
+
+

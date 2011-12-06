@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<application xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://research.sun.com/wadl" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:uco="http://www.w3.org/unicorn/observationresponse" xsi:schemaLocation="http://research.sun.com/wadl wadl.xsd">
+  <grammars>
+    <xs:schema>
+      <!-- REQUEST PARAMETERS -->
+      <xs:element name="tProfile">
+        <xs:complexType>
+          <xs:choice>
+            <xs:element name="none"/>
+            <xs:element name="css1"/>
+            <xs:element name="css2"/>
+            <xs:element name="css21"/>
+            <xs:element name="css3"/>
+            <xs:element name="svg"/>
+            <xs:element name="svgbasic"/>
+            <xs:element name="svgtiny"/>
+            <xs:element name="mobile"/>
+            <xs:element name="atsc-tv"/>
+            <xs:element name="tv"/>
+          </xs:choice>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="tMedium">
+        <xs:complexType>
+          <xs:choice>
+            <xs:element name="all"/>
+            <xs:element name="aural"/>
+            <xs:element name="braille"/>
+            <xs:element name="embossed"/>
+            <xs:element name="handheld"/>
+            <xs:element name="print"/>
+            <xs:element name="projection"/>
+            <xs:element name="screen"/>
+            <xs:element name="tty"/>
+            <xs:element name="tv"/>
+            <xs:element name="presentation"/>
+          </xs:choice>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="tLang">
+        <xs:complexType>
+          <xs:choice>
+            <xs:element name="en"/>
+            <xs:element name="fr"/>
+            <xs:element name="ja"/>
+            <xs:element name="es"/>
+            <xs:element name="zh-cn"/>
+            <xs:element name="nl"/>
+            <xs:element name="de"/>
+          </xs:choice>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="tWarningLevel">
+        <xs:complexType>
+          <xs:choice>
+            <xs:element name="no"/>
+            <xs:element name="0"/>
+            <xs:element name="1"/>
+            <xs:element name="2"/>
+          </xs:choice>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="tOutput">
+        <xs:complexType>
+          <xs:choice>
+            <xs:element name="ucn"/>
+          </xs:choice>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </grammars>
+  <resources base="http://jigsaw.w3.org/css-validator/">
+    <resource uri="validator">
+      <method name="GET" id="CssValidationUri">
+        <request>
+          <query_variable name="uri"/>
+          <query_variable name="profile" type="tProfile"/>
+          <query_variable name="usermedium" type="tMedium"/>
+          <query_variable name="lang" type="tLang"/>
+          <query_variable name="warning" type="tWarningLevel"/>
+          <query_variable name="output" fixed="ucn" type="tOutput" required="true"/>
+          <!--<query_variable name="titi" type="xs:string" />-->
+        </request>
+      </method>
+      <method name="GET" id="CssValidationText">
+        <request>
+          <query_variable name="text"/>
+          <query_variable name="profile" type="tProfile"/>
+          <query_variable name="usermedium" type="tMedium"/>
+          <query_variable name="lang" type="tLang"/>
+          <query_variable name="warning" type="tWarningLevel"/>
+          <query_variable name="output" fixed="ucn" type="tOutput" required="true"/>
+          <!--<query_variable name="titi" type="xs:string" />-->
+        </request>
+      </method>
+      <method name="POST" id="CssValidationFile">
+        <request>
+          <query_variable name="file"/>
+          <query_variable name="profile" type="tProfile"/>
+          <query_variable name="usermedium" type="tMedium"/>
+          <query_variable name="lang" type="tLang"/>
+          <query_variable name="warning" type="tWarningLevel"/>
+          <query_variable name="output" fixed="ucn" type="tOutput" required="true"/>
+          <!--<query_variable name="titi" type="xs:string" />-->
+        </request>
+      </method>
+    </resource>
+  </resources>
+</application>
