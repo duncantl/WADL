@@ -100,16 +100,37 @@ function(node, methodNode = node[["method"]])
      methodNode = getNodeSet(node, sprintf("//x:method[@id = '%s']", gsub("^#", "", href)), "x")[[1]]
 
   params = getNodeSet(methodNode, ".//x:request/x:param", "x")
-  ids = sapply(params, xmlGetAttr, "name")
-  vars = c("name", "type", "required", "default", "repeating")
-  tmp= lapply(vars,
+  #XXX Check if this is empty, e.g. noaa.wadl:<resource path="datasets/{dataSet}/locations/{location}/datatypes/{dataType}/data/{dates}/{bufferIsIgnored: \d+,\d+}">
+  ans = makeParamDF(params)
+
+  params = getNodeSet(node, "./x:param", "x")
+  if(length(params))
+    ans = rbind(ans, makeParamDF(params))
+  
+  ans
+}
+
+makeParamDF =
+function(params,  vars = c("name", "type", "required", "default", "repeating", "style")  )
+{
+  if(length(params) != 0) {
+    ids = sapply(params, xmlGetAttr, "name")
+    tmp = lapply(vars,
                function(var)
                   sapply(params, xmlGetAttr, var, NA))
-  ans = structure(as.data.frame(tmp), names = vars)
-  ans$required = as.logical(ans$required)
-  ans$repeating = as.logical(ans$repeating)
+    ans = structure(as.data.frame(tmp, stringsAsFactors = FALSE), names = vars)
+    ans$required = as.logical(ans$required)
+    ans$repeating = as.logical(ans$repeating)
 
-  ans$options = lapply(params, getParamOptions)
+    ans$options = lapply(params, getParamOptions)
+  } else {
+     ans = data.frame(character(), character(), logical(), character(), logical(), factor(), stringsAsFactors = FALSE)
+     names(ans) = vars
+     ans$options = list()
+  }
+  ans$name = as.character(ans$name)
+  ans$style = as.character(ans$style)
+  
   ans
 }
 
@@ -139,16 +160,16 @@ function(patterns)
 
 makeFunctions =
 function(wadl, methods = wadlMethods(wadl), eval = FALSE, rewriteURL = function(x) x,
-          makeFun = makeFunction, ...)
+          makeFun = makeFunction, funcNames = basename(rewriteURL(names(methods))), ...)
 {
   if(!missing(rewriteURL) && is.character(rewriteURL) && length(rewriteURL) == 2)
       rewriteURL = makeGsubFun(rewriteURL)
 
   wadl = as(wadl, "WADL")
 
-  ans = mapply(function(id, x)
-                   makeFun(x, id, name = basename(id), ...),
-               rewriteURL(names(methods)), methods)
+  ans = mapply(function(id, x, name)
+                   makeFun(x, id, name = name, ...),
+               rewriteURL(names(methods)), methods, funcNames)
 
   if(!missing(eval)) {
      if(is.logical(eval)) {
@@ -178,6 +199,10 @@ function(paramIds, defaults, extraArgs, name, url)
   c(structure(sprintf("%s%s%s", paramIds, c("", " = ")[i + 1L], defaults), names = paramIds), extraArgs)
 }
 
+escape =
+function(x)
+  gsub("\\", "\\\\", x, fixed = TRUE)  
+
 makeFunction =
 function(params, url, options = params$options, name = "foo", converter = "NULL", action = "getForm",
           OptionsCharacterThreshold = getOption("WADLOptionsCharacterThreshold", 5000L),
@@ -199,6 +224,7 @@ function(params, url, options = params$options, name = "foo", converter = "NULL"
       options[i] = vars
    }
 
+   url = escape(url)
 
    extraArgs = c("...", .url = sprintf(".url = '%s'", url), .convert = sprintf('.convert = %s', converter))
 
@@ -216,10 +242,17 @@ function(params, url, options = params$options, name = "foo", converter = "NULL"
    } else
      check = character()
 
-   var = params$name[params$required]
+   var = params$name[ (is.na(params$required) | params$required) & params$style != "template"]
    setParams = c("params = list(",
                    paste(sprintf("              '%s' = `%s`", var, var), collapse = ",\n    "),
                  "            )")
+
+   changeURL = ""
+   if(any(isTemplate <- (!is.na(params$style) & params$style == "template"))) {
+       templateArgList = makeTemplateArgListCode(params[isTemplate,])
+       changeURL = sprintf(".url = WADL:::substituteTemplateArgs(.url, %s)", templateArgList)
+   }
+                            
    
    body = c(
             check,
@@ -227,6 +260,7 @@ function(params, url, options = params$options, name = "foo", converter = "NULL"
              "",
              missings,
              "",
+             changeURL,
              if(length(hooks$preCall)) hooks$preCall(params, url, name),
              sprintf("ans = %s(.url, .params = params, ...)", action),
              if(length(hooks$postCall)) hooks$postCall(params, url, name),     
@@ -238,7 +272,24 @@ function(params, url, options = params$options, name = "foo", converter = "NULL"
              "   ans"
             )
 
-  c(paste(c(sprintf("%s = ", name), sig, "{", sprintf("    %s", body), "}"), collapse = "\n"), optVars)
+  name = gsub("\\", "", name, fixed = TRUE)
+  c(paste(c(sprintf("`%s` = ", name), sig, "{", sprintf("    %s", body), "}"), collapse = "\n"), optVars)
+}
+
+substituteTemplateArgs =
+function(url, args)
+{
+  for(i in names(args))
+    url = gsub(sprintf("\\{%s\\}", i), args[[i]], url)
+
+  url
+}
+
+makeTemplateArgListCode =
+function(params)
+{
+  sprintf("c(%s)",
+           paste(sprintf("'%s' = %s", params$name, params$name), collapse = ", "))
 }
 
 getOptionsVector =
@@ -279,4 +330,29 @@ function(type)
 {
   type = gsub("^xsd:", "", type)
   XSDTypeMap[type]
+}
+
+
+
+makeTemplateFunction =
+function(params, funcNames)
+{
+  args = params$name[ params$style == "template", ]
+  miss = sprintf("missings = c(%s)",
+           paste(sprintf("'%s' = missing(%s)", args, args), collapse = ", "))
+
+  other = sprintf("other = list(%s)",
+           paste(sprintf("'%s' = %s", args, args), collapse = ", "))  
+
+  c("function(",
+     sig,
+     "..., .funcNames, .append = '')",
+     "{",
+       miss,
+       "fun = matchTemplateFunction(!missings, .funcNames, .append)",
+       "args = list(...)",
+       "other",
+       "names(args)[names(other)] = other",
+       "do.call(fun, args)",
+    "}")
 }
