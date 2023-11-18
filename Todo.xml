@@ -2,11 +2,21 @@
 <?xml-stylesheet type="text/xsl" href="/Users/nolan/EMD/StatComputing/trunk/XDynDocs/inst/XSL/OmegahatXSL/Todo.xsl" ?>
 
 <topics xmlns:r="http://www.r-project.org">
-<title>RKML</title>
+<title>WADL</title>
 
 <topic>
 
 <items>
+
+<item>
+Get rid of // in URLs function names, etc.
+</item>
+
+<item>
+Allow us to change/specify the names on the methods when
+they are URLs.
+</item>
+
 <item>
 generate NAMESPACE
 </item>
